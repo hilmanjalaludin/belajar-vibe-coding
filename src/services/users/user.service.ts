@@ -34,3 +34,34 @@ export async function registerUserService(data: RegisterUserDto) {
 
   return { success: true };
 }
+
+export interface LoginUserDto {
+  email: string;
+  password: string;
+}
+
+export async function loginUserService(data: LoginUserDto) {
+  const { email, password } = data;
+
+  // Lakukan query ke database menggunakan Drizzle ORM untuk mencari user berdasarkan email
+  const existingUsers = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (existingUsers.length === 0) {
+    return { success: false, message: "Email atau password salah" };
+  }
+
+  const user = existingUsers[0];
+
+  // Bandingkan password input dengan password ter-hash di database menggunakan bcrypt.compare()
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    return { success: false, message: "Email atau password salah" };
+  }
+
+  return { success: true, user: { id: user.id, email: user.email } };
+}
