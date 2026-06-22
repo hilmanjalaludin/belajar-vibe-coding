@@ -65,3 +65,29 @@ export async function loginUserService(data: LoginUserDto) {
 
   return { success: true, user: { id: user.id, email: user.email } };
 }
+
+export async function getCurrentUserService(email: string) {
+  // Lakukan query ke database menggunakan Drizzle ORM untuk mencari user berdasarkan email
+  const existingUsers = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (existingUsers.length === 0) {
+    return { success: false, message: "User tidak ditemukan" };
+  }
+
+  const user = existingUsers[0];
+
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }
+  };
+}

@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 import { jwt } from "@elysiajs/jwt";
-import { registerUserService, loginUserService } from "../../services/users/user.service";
+import { registerUserService, loginUserService, getCurrentUserService } from "../../services/users/user.service";
 
 export const userRoutes = new Elysia()
   .use(
@@ -52,4 +52,42 @@ export const userRoutes = new Elysia()
       email: t.String(),
       password: t.String()
     })
+  })
+  .get("/api/users/current", async ({ headers, set, jwt }) => {
+    const authHeader = headers["authorization"];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      set.status = 401;
+      return {
+        error: "User tidak ditemukan"
+      };
+    }
+
+    const token = authHeader.substring(7);
+    const payload = await jwt.verify(token);
+
+    if (!payload || !payload.email) {
+      set.status = 401;
+      return {
+        error: "User tidak ditemukan"
+      };
+    }
+
+    const result = await getCurrentUserService(payload.email as string);
+
+    if (!result.success || !result.user) {
+      set.status = 401;
+      return {
+        error: "User tidak ditemukan"
+      };
+    }
+
+    return {
+      data: {
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        created_at: result.user.createdAt,
+        updated_at: result.user.updatedAt
+      }
+    };
   });
